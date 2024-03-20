@@ -3,14 +3,22 @@ import numpy as np
 import time
 import cv2
 import os
+import argparse
 import sys
 
-IMAGE_NAME = 'snap1.jpg'
-VIDEO_NAME = "vid1.mp4"
+parser = argparse.ArgumentParser()
+
+parser.add_argument("-e", "--headless",
+                    help="Run Script in Headless Mode or not", action="store_true")
+parser.add_argument("-v", "--video", type=str, help="Path To Video File")
+parser.add_argument("-i", "--image", type=str, help="Path To Image File")
+
+args = parser.parse_args()
+
 MODEL_FILENAME = "frozen_east_text_detection.pb"
 
-IMAGE_PATH = os.path.join(os.curdir, "media", IMAGE_NAME)
-VIDEO_PATH = os.path.join(os.curdir, "media", VIDEO_NAME)
+IMAGE_PATH = args.image
+VIDEO_PATH = args.video
 MODEL_PATH = os.path.join(os.curdir, MODEL_FILENAME)
 
 MIN_CONFIDENCE = 0.5
@@ -20,11 +28,11 @@ LAYERS = [
     "feature_fusion/concat_3"
 ]
 
-isVideo = False
+isVideo = True if args.video else False
+isHeadless = True if args.headless else False
 
-if len(sys.argv) > 1:
-    if sys.argv[1] == 'video':
-        isVideo = True
+print(f"Headless Mode - {isHeadless}")
+print(f"Video Mode - {isVideo}")
 
 
 def getVideoCaptureDevice():
@@ -68,18 +76,21 @@ def showProcessedFrame(image, window_name, model, scale_factor=None):
     final_image = drawBoundingBoxes(ratioHeight, ratioWidth, boxes, orig)
 
     if isVideo:
-
         fps = f"{1 / (time.perf_counter() - start):.2f} FPS"
+        if isHeadless:
+            print(fps)
 
-        cv2.putText(orig, fps, (50, 150),
-                    cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 3)
+        else:
+            cv2.putText(orig, fps, (50, 150),
+                        cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 3)
 
-    if scale_factor:
-        cv2.imshow(window_name, cv2.resize(final_image, (0, 0),
-                                           fx=scale_factor[0], fy=scale_factor[1]))
+    if not isHeadless:
+        if scale_factor:
+            cv2.imshow(window_name, cv2.resize(final_image, (0, 0),
+                                               fx=scale_factor[0], fy=scale_factor[1]))
 
-    else:
-        cv2.imshow(window_name, final_image)
+        else:
+            cv2.imshow(window_name, final_image)
 
 
 def loadModel():
@@ -142,17 +153,15 @@ def drawBoundingBoxes(ratioHeight, ratioWidth, boundingBoxes, original_image):
 
 
 def main():
-    cap = getVideoCaptureDevice()
-
-    if not cap:
-        print("Video File Not Found :(")
-        sys.exit(1)
-
     model = loadModel()
 
-    print(f"Is video - {isVideo}")
-
     if isVideo:
+        cap = getVideoCaptureDevice()
+
+        if not cap:
+            print("Video File Not Found :(")
+            sys.exit(1)
+
         while cap.isOpened():
             _, frame = cap.read()
             showProcessedFrame(frame, "Base Video", model=model,
