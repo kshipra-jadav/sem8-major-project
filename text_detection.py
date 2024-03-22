@@ -5,6 +5,7 @@ import cv2
 import os
 import argparse
 import sys
+import random
 
 parser = argparse.ArgumentParser()
 
@@ -145,6 +146,9 @@ def drawBoundingBoxes(ratioHeight, ratioWidth, boundingBoxes, original_image):
 
         endX = int(endX * ratioWidth)
         endY = int(endY * ratioHeight)
+
+        cut_img = original_image[startY: endY, startX: endX]
+        cv2.imwrite(fr".\tmpimg\img-{random.randint(0, 255)}.jpg", cut_img)
 
         final_image = cv2.rectangle(
             original_image, (startX, startY), (endX, endY), (0, 255, 0), 2)
