@@ -36,6 +36,15 @@ print(f"Headless Mode - {isHeadless}")
 print(f"Video Mode - {isVideo}")
 
 
+def getFinalPath():
+    parent_dir, filename = os.path.split(IMAGE_PATH)
+    basename, extension = filename.split(".")
+    new_filename = f"{basename}-text_detect.{extension}"
+    final_path = os.path.join(parent_dir, new_filename)
+
+    return final_path
+
+
 def getVideoCaptureDevice():
     if not os.path.isfile(VIDEO_PATH):
         return None
@@ -75,6 +84,13 @@ def showProcessedFrame(image, window_name, model, scale_factor=None):
     boxes = getBoundingBoxes(numRows, numCols, scores, geometry)
 
     final_image = drawBoundingBoxes(ratioHeight, ratioWidth, boxes, orig)
+
+    if not isVideo and isHeadless:
+        final_path = getFinalPath()
+
+        cv2.imwrite(final_path, final_image)
+
+        print(f"Image Saved Successfully to :- {final_path}!")
 
     if isVideo:
         fps = f"{1 / (time.perf_counter() - start):.2f} FPS"
