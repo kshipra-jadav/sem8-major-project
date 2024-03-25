@@ -33,7 +33,7 @@ LAYERS = [
 
 isVideo = True if args.video else False
 isHeadless = True if args.headless else False
-isCamera = True if args.camera else False
+isCamera = True if args.camera is not None else False
 
 print(f"Headless Mode - {isHeadless}")
 print(f"Video Mode - {isVideo}")
@@ -73,7 +73,6 @@ def getImage():
 
     else:
         img = cv2.imread(IMAGE_PATH)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         return img
 
@@ -116,14 +115,19 @@ def showProcessedFrame(image, window_name, model, scale_factor=None):
 
         print(f"Image Saved Successfully to :- {final_path}!")
 
-    if isVideo:
+    if isVideo or isCamera:
         fps = f"{1 / (time.perf_counter() - start):.2f} FPS"
         if isHeadless:
             print(fps)
 
         else:
-            cv2.putText(orig, fps, (50, 150),
-                        cv2.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 3)
+            imageHeight, imageWidth = orig.shape[: 2]
+
+            scale = 0.1
+            fontScale = min(imageWidth, imageHeight) / (25 / scale)
+
+            cv2.putText(orig, fps, (25, 150),
+                        cv2.FONT_HERSHEY_SIMPLEX, fontScale, (255, 0, 0), 3)
 
     if not isHeadless:
         if scale_factor:
@@ -202,7 +206,7 @@ def drawBoundingBoxes(ratioHeight, ratioWidth, boundingBoxes, original_image):
 def main():
     model = loadModel()
 
-    if isVideo:
+    if isVideo or isCamera:
         cap = getVideoCaptureDevice()
 
         while cap.isOpened():
