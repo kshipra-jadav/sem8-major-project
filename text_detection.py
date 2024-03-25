@@ -13,6 +13,7 @@ parser.add_argument("-e", "--headless",
                     help="Run Script in Headless Mode or not", action="store_true")
 parser.add_argument("-v", "--video", type=str, help="Path To Video File")
 parser.add_argument("-i", "--image", type=str, help="Path To Image File")
+parser.add_argument("-c", "--camera", type=int, help="Camera ID")
 
 args = parser.parse_args()
 
@@ -21,6 +22,7 @@ MODEL_FILENAME = "frozen_east_text_detection.pb"
 IMAGE_PATH = args.image
 VIDEO_PATH = args.video
 MODEL_PATH = os.path.join(os.curdir, MODEL_FILENAME)
+CAMERA_ID = args.camera
 
 MIN_CONFIDENCE = 0.5
 WIDTH, HEIGHT = 1280, 1280
@@ -31,9 +33,11 @@ LAYERS = [
 
 isVideo = True if args.video else False
 isHeadless = True if args.headless else False
+isCamera = True if args.camera else False
 
 print(f"Headless Mode - {isHeadless}")
 print(f"Video Mode - {isVideo}")
+print(f"Camera Mode - {isCamera}")
 
 
 def getFinalPath():
@@ -46,12 +50,32 @@ def getFinalPath():
 
 
 def getVideoCaptureDevice():
+    if isCamera:
+        cap = cv2.VideoCapture(CAMERA_ID)
+
+        if cap is None or not cap.isOpened():
+            print(f"No Camera Found At ID - {CAMERA_ID}")
+            sys.exit(1)
+        else:
+            return cap
+
     if not os.path.isfile(VIDEO_PATH):
-        return None
+        print(f"No Video File Found At Path - {VIDEO_PATH}")
+        sys.exit(1)
 
-    cap = cv2.VideoCapture(VIDEO_PATH)
+    return cv2.VideoCapture(VIDEO_PATH)
 
-    return cap
+
+def getImage():
+    if not os.path.isfile(IMAGE_PATH):
+        print(f"No Image Found At Path - {IMAGE_PATH}")
+        sys.exit(1)
+
+    else:
+        img = cv2.imread(IMAGE_PATH)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        return img
 
 
 def showProcessedFrame(image, window_name, model, scale_factor=None):
@@ -181,10 +205,6 @@ def main():
     if isVideo:
         cap = getVideoCaptureDevice()
 
-        if not cap:
-            print("Video File Not Found :(")
-            sys.exit(1)
-
         while cap.isOpened():
             _, frame = cap.read()
             showProcessedFrame(frame, "Base Video", model=model,
@@ -194,7 +214,7 @@ def main():
                 cv2.destroyAllWindows()
                 break
     else:
-        img = cv2.imread(IMAGE_PATH)
+        img = getImage()
         showProcessedFrame(img, "Image", model=model, scale_factor=(0.5, 0.5))
         cv2.waitKey(0)
 
