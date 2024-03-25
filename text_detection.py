@@ -155,7 +155,7 @@ def getBoundingBoxes(numRows, numCols, scores, geometry):
 
 
 def drawBoundingBoxes(ratioHeight, ratioWidth, boundingBoxes, original_image):
-    final_image = None
+    final_image = []
     for (startX, startY, endX, endY) in boundingBoxes:
         startX = int(startX * ratioWidth)
         startY = int(startY * ratioHeight)
@@ -169,7 +169,10 @@ def drawBoundingBoxes(ratioHeight, ratioWidth, boundingBoxes, original_image):
         final_image = cv2.rectangle(
             original_image, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
-    return final_image
+    if len(final_image):
+        return final_image
+    else:
+        return original_image
 
 
 def main():
